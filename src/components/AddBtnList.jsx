@@ -1,21 +1,28 @@
-import classname from "classname";
 import { useEffect, useState } from 'react';
+import axios, { Axios } from 'axios';
+
 import List from './List';
-import { Fragment } from "react";
 import Badge from "./Badge";
 import closeBtn from '../img/form_close.svg'
-import axios, { Axios } from 'axios';
+
 const AddBtnList = (props) => {
    
     const [visibleForm,setVisibleForm]=useState(false);
     const [selectedColor,setSelectedColor]=useState(3);
     const [inputValuse,setInputValuse]=useState('');
+    const [isLoading,setIsLoading]=useState(false);
+
+useEffect(()=>{
+    if (Array.isArray(props.colorsItem)) {
+       setSelectedColor(props.colorsItem[0].id) 
+    }
+
+},[props.colorsItem]);
 
     const onCloseForm =()=>{
         setVisibleForm(false)
         setSelectedColor(props.colorsItem[0].id)
         setInputValuse('')
-
     }
 
     const addList=()=>{
@@ -24,9 +31,14 @@ const AddBtnList = (props) => {
             return
             
         }
-        props.onAddList({"id": Math.random(), "name": inputValuse,"color": props.colorsItem.filter(c=>c.id===selectedColor)[0].name})
-       
-        onCloseForm()
+        setIsLoading(true)
+        axios.post('http://localhost:3001/lists',{ name: inputValuse, colorId: selectedColor}).then(({data})=>{ 
+            const color = props.colorsItem.filter(c=>c.id===selectedColor)[0].name;
+            const ListObj={...data , color:{name: color }};
+            console.log(ListObj)
+            props.onAddList(ListObj)
+            onCloseForm()
+        }).finally(()=> setIsLoading(false))
 
     };
 
@@ -54,12 +66,12 @@ const AddBtnList = (props) => {
             <div className="add__list__form-colors">
                 <ul>
                     <li>{props.colorsItem.map((color)=>
-                    <Badge key={color.id} color={color.name} onClick={()=>setSelectedColor(color.id)} className={selectedColor==color.id ? 'active':null}/>
+                        <Badge key={color.id} color={color.name} onClick={()=>setSelectedColor(color.id)} className={selectedColor==color.id ? 'active':null}/>
                     )
                     }
                     </li>
                 </ul> 
-                <button className="button" onClick={addList}>Добавить</button>
+                <button className="button" onClick={addList}>{isLoading ? 'Добавление' : 'Добавить'}</button>
             </div>
             
            </div>:null}
